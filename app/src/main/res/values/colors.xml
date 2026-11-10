@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="asl_primary">#56318C</color>
+    <color name="asl_on_primary">#FFFFFF</color>
+    <color name="asl_background">#FAF8FD</color>
+    <color name="asl_surface">#FFFFFF</color>
+    <color name="asl_preview">#F0EAF8</color>
+    <color name="asl_text">#251C32</color>
+    <color name="asl_secondary_text">#655B70</color>
+    <color name="asl_outline">#D8CEE4</color>
 </resources>

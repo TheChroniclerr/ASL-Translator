@@ -1,9 +1,18 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<resources>
     <style name="Base.Theme.ASLTraslator" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/asl_primary</item>
+        <item name="colorOnPrimary">@color/asl_on_primary</item>
+        <item name="colorSecondary">@color/asl_primary</item>
+        <item name="colorSurface">@color/asl_surface</item>
+        <item name="colorOnSurface">@color/asl_text</item>
+        <item name="colorOnSurfaceVariant">@color/asl_secondary_text</item>
+        <item name="colorOutline">@color/asl_outline</item>
+        <item name="android:colorBackground">@color/asl_background</item>
+        <item name="android:windowBackground">@color/asl_background</item>
     </style>
-
     <style name="Theme.ASLTraslator" parent="Base.Theme.ASLTraslator" />
+    <style name="ShapeAppearanceOverlay.Asl.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

@@ -1,0 +1,10 @@
+<resources>
+    <color name="asl_primary">#D2B6FF</color>
+    <color name="asl_on_primary">#32105F</color>
+    <color name="asl_background">#17121E</color>
+    <color name="asl_surface">#211A2A</color>
+    <color name="asl_preview">#2D233A</color>
+    <color name="asl_text">#F0E7F7</color>
+    <color name="asl_secondary_text">#C6B9D1</color>
+    <color name="asl_outline">#51445F</color>
+</resources>
