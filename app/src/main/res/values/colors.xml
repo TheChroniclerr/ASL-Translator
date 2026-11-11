@@ -2,12 +2,26 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="asl_primary">#56318C</color>
+
+    <color name="asl_primary">#2563EB</color>
+    <color name="asl_primary_variant">#1D4ED8</color>
     <color name="asl_on_primary">#FFFFFF</color>
-    <color name="asl_background">#FAF8FD</color>
+    <color name="asl_primary_container">#DBEAFE</color>
+    <color name="asl_on_primary_container">#1E40AF</color>
+
+    <color name="asl_background">#F8FAFC</color>
     <color name="asl_surface">#FFFFFF</color>
-    <color name="asl_preview">#F0EAF8</color>
-    <color name="asl_text">#251C32</color>
-    <color name="asl_secondary_text">#655B70</color>
-    <color name="asl_outline">#D8CEE4</color>
+    <color name="asl_surface_variant">#F1F5F9</color>
+    <color name="asl_preview">#0F172A</color>
+
+    <color name="asl_text">#0F172A</color>
+    <color name="asl_secondary_text">#64748B</color>
+
+    <color name="asl_outline">#E2E8F0</color>
+    <color name="asl_handle">#CBD5E1</color>
+
+    <color name="asl_active_green">#10b981</color>
+    <color name="asl_error">#EF4444</color>
+
+
 </resources>

@@ -36,6 +36,14 @@
     <string name="recents_description">Your recent translations will appear here once translation sessions are available. (Not yet implemented)</string>
     <string name="dictionary_description">Dictionary needs to be populated</string>
     <string name="settings_description">Settings Page Description</string>
+    <string name="sign_up_description">Sign up get started!</string>
+    <string name="login_title">Welcome Back</string>
+    <string name="login_subtitle">Sign in to sync your dictionary and translation history</string>
+    <string name="email_address">Email Address</string>
+    <string name="password">Password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="no_account_prompt">Don\'t have an account? </string>
+    <string name="sign_up">Sign Up</string>
     <string-array name="language_options">
         <item>ASL</item>
         <item>English</item>
