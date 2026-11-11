@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
@@ -35,6 +36,7 @@ public final class ResizablePanelController {
     private int pointerId = -1;
     private boolean dragging;
     private boolean doubleTap;
+    private boolean cameraPreviewActive;
 
 
     public ResizablePanelController(View root, float restoredSplit) {
@@ -96,6 +98,7 @@ public final class ResizablePanelController {
                 });
         layoutListener = (view, l, top, r, b, oldL, oldT, oldR, oldB) -> apply();
         space.addOnLayoutChangeListener(layoutListener);
+        root.addOnLayoutChangeListener(layoutListener);
         space.post(initialLayout);
     }
 
@@ -170,7 +173,7 @@ public final class ResizablePanelController {
     }
 
     private void apply() {
-        if (space.getWidth() <= 0 || divider.getHeight() <= 0) {
+        if (space.getWidth() <= 0 || divider.getHeight() <= 0 || root.getHeight() <= 0) {
             return;
         }
         int translationMin = textMinimum(R.id.translation_input, false)
@@ -179,13 +182,31 @@ public final class ResizablePanelController {
         controls.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         View preview = root.findViewById(R.id.camera_preview);
+        View placeholder = root.findViewById(R.id.camera_placeholder);
         int previewMin = Math.max(preview.getMinimumHeight(),
-                textMinimum(R.id.camera_status, true) + preview.getPaddingTop() + preview.getPaddingBottom());
-        int cameraMin = controls.getMeasuredHeight() + textMinimum(R.id.live_caption, true) + previewMin;
+                textMinimum(R.id.camera_status, true) + placeholder.getPaddingTop()
+                        + placeholder.getPaddingBottom());
+        View switchCamera = root.findViewById(R.id.switch_camera);
+        switchCamera.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int cameraMin = controls.getMeasuredHeight() + switchCamera.getMeasuredHeight()
+                + textMinimum(R.id.live_caption, true) + previewMin;
         int required = translationMin + cameraMin + divider.getHeight()
                 + space.getPaddingTop() + space.getPaddingBottom();
         if (space.getMinimumHeight() != required) {
             space.setMinimumHeight(required);
+        }
+        // TextureView can report a large natural size inside an unconstrained scroll child.
+        // Bound the split area to the viewport, expanding only for measured essential controls.
+        ViewGroup content = (ViewGroup) space.getParent();
+        int viewport = root.getHeight() - root.getPaddingTop() - root.getPaddingBottom();
+        int desiredHeight = Math.max(required, viewport - space.getTop() - content.getPaddingBottom());
+        LinearLayout.LayoutParams spaceParams = (LinearLayout.LayoutParams) space.getLayoutParams();
+        if (spaceParams.height != desiredHeight || spaceParams.weight != 0) {
+            spaceParams.height = desiredHeight;
+            spaceParams.weight = 0;
+            space.setLayoutParams(spaceParams);
+            return;
         }
         int available = availableHeight();
         if (available < translationMin + cameraMin) {
@@ -199,7 +220,8 @@ public final class ResizablePanelController {
         }
         int iconHeight = root.getResources().getDimensionPixelSize(R.dimen.icon_size);
         root.findViewById(R.id.preview_icon).setVisibility(
-                available - height - cameraMin >= iconHeight ? View.VISIBLE : View.GONE);
+                !cameraPreviewActive && available - height - cameraMin >= iconHeight
+                        ? View.VISIBLE : View.GONE);
         int percent = Math.round(height * 100f / available);
         ViewCompat.setStateDescription(divider, root.getContext().getString(
                 R.string.split_state, percent, 100 - percent));
@@ -218,6 +240,11 @@ public final class ResizablePanelController {
         apply();
     }
 
+    public void setCameraPreviewActive(boolean active) {
+        cameraPreviewActive = active;
+        apply();
+    }
+
     public float getSplit() {
         return Math.max(0, Math.min(1, split));
     }
@@ -225,6 +252,7 @@ public final class ResizablePanelController {
     public void dispose() {
         space.removeCallbacks(initialLayout);
         space.removeOnLayoutChangeListener(layoutListener);
+        root.removeOnLayoutChangeListener(layoutListener);
         divider.setOnTouchListener(null);
         divider.setOnKeyListener(null);
         divider.setOnClickListener(null);
