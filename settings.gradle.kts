@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ASL-Traslator"
 include(":app")
- 
+include(":recognition-core", ":recognition-training")
