@@ -1,4 +1,5 @@
 package com.group_nine.asl_translator.auth;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,7 +17,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.group_nine.asl_translator.MainActivity;
 import com.group_nine.asl_translator.R;
 
-public class RegisterActivity extends AppCompatActivity{
+public class RegisterActivity extends AppCompatActivity {
     private TextInputEditText editName, editEmail, editPassword;
     private ProgressBar registerProgress;
     private MaterialButton btnCreateAccount;
@@ -70,7 +71,10 @@ public class RegisterActivity extends AppCompatActivity{
         prefs.edit()
                 .putString("user_name", name)
                 .putString("saved_email", email)
+                .putString("user_email", email)
                 .putString("saved_password", password)
+                .putString("user_password", password)
+                .putLong("member_since", System.currentTimeMillis())
                 .putBoolean("is_logged_in", true)
                 .apply();
 
@@ -84,4 +88,3 @@ public class RegisterActivity extends AppCompatActivity{
         }, 700);
     }
 }
-

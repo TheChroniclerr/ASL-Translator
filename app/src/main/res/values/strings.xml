@@ -3,7 +3,6 @@
     <string name="home">Home</string>
     <string name="recents">Recents</string>
     <string name="add">Add</string>
-    <string name="dictionary">Dictionary</string>
     <string name="settings">Settings</string>
     <string name="open_menu">Open navigation menu</string>
     <string name="help">Help</string>
@@ -48,10 +47,13 @@
     <string name="drawer_alphabet">ASL Alphabet Guide</string>
     <string name="drawer_clear_history">Clear History</string>
     <string name="profile_dialog_message">User: %1$s\nEmail: %2$s\nStatus: Active Session</string>
-    <string name="alphabet_dialog_message">Fingerspelling Guide:\n• Use flat handshape for B, D, F\n• Face palm forward at chest height\n• Keep steady movement for clean detection</string>
     <string name="clear_history_prompt">Are you sure you want to clear your saved translation history? This cannot be undone.</string>
     <string name="clear_history_success">Translation history cleared.</string>
     <string name="clear_action">Clear</string>
+    <string name="bookmarks">Bookmarks</string>
+    <string name="bookmarks_empty_title">No bookmarks yet</string>
+    <string name="bookmarks_empty_desc">Tap the \'+\' to bookmark translations.</string>
+    <string name="search_bookmarks_hint">Search bookmarks…</string>
     <string-array name="language_options">
         <item>ASL</item>
         <item>English</item>

@@ -71,7 +71,6 @@
         android:orientation="vertical"
         android:paddingTop="@dimen/content_gap">
 
-        <!-- Default height for preview; ResizablePanelController resizes this dynamically -->
         <LinearLayout
             android:id="@+id/camera_panel"
             android:layout_width="match_parent"
@@ -137,7 +136,6 @@
                 android:background="@drawable/bg_handle" />
         </FrameLayout>
 
-        <!-- Uses layout_weight="1" with 0dp height to fill remaining space cleanly -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/translation_panel"
             android:layout_width="match_parent"
@@ -149,21 +147,38 @@
             app:strokeWidth="1dp"
             app:cardBackgroundColor="@color/asl_surface">
 
-            <EditText
-                android:id="@+id/translation_output"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:gravity="top|start"
-                android:padding="@dimen/card_padding"
-                android:hint="@string/translation_output"
-                android:textColorHint="@color/asl_secondary_text"
-                android:textColor="@color/asl_text"
-                android:textSize="17sp"
-                android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
-                android:scrollbars="vertical"
-                android:overScrollMode="always"
-                android:importantForAutofill="no" />
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/translation_output"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:gravity="top|start"
+                    android:padding="@dimen/card_padding"
+                    android:hint="@string/translation_output"
+                    android:textColorHint="@color/asl_secondary_text"
+                    android:textColor="@color/asl_text"
+                    android:textSize="17sp"
+                    android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
+                    android:scrollbars="vertical"
+                    android:overScrollMode="always"
+                    android:importantForAutofill="no" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_handshapes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/card_padding"
+                    android:paddingEnd="@dimen/card_padding"
+                    android:paddingBottom="8dp"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
