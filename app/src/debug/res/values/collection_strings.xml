@@ -1,0 +1,17 @@
+<resources>
+    <string name="collect_samples">Collect vowel samples</string>
+    <string name="collection_title">Vowel sample collection</string>
+    <string name="collection_privacy">Opt-in collection saves labeled hand landmarks and diagnostic scores on this phone. No photos, video, or audio are saved. Export only when you choose. Use three separate sessions and vary the background and lighting.</string>
+    <string name="collection_start">Start camera</string>
+    <string name="collection_stop">Stop camera</string>
+    <string name="collection_switch">Switch camera</string>
+    <string name="collection_capture">Capture next hold</string>
+    <string name="collection_cancel">Cancel hold</string>
+    <string name="collection_export">Export samples ZIP</string>
+    <string name="collection_delete">Delete local samples</string>
+    <string name="collection_new">Start selected session</string>
+    <string name="collection_reference">ASL letter reference</string>
+    <string name="collection_alias">Participant alias (for example P001)</string>
+    <string name="collection_close">Back to Home</string>
+    <string name="collection_preview">Collection camera preview</string>
+</resources>

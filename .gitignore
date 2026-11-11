@@ -10,7 +10,14 @@
 /.idea/deviceManager.xml
 .DS_Store
 /build
+**/build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+.venv/
+__pycache__/
+*.pyc
+/phone-samples/
+ASL-vowel-samples*.zip
+*.joblib

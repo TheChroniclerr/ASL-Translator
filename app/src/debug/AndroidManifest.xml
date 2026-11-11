@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name="com.group_nine.asl_translator.home.SampleCollectionActivity"
+            android:exported="false" />
+    </application>
+</manifest>

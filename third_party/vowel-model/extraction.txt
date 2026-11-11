@@ -1,0 +1,6 @@
+processed=24000
+accepted=23567
+no_hand=433
+multiple_hands=0
+unreadable=0
+Hand Landmarker IMAGE mode, CPU, default .5 thresholds, float16 version 1.

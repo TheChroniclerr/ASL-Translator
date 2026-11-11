@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/collection_scroll" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:focusableInTouchMode="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="16dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/collection_title" android:textSize="24sp" android:textStyle="bold" />
+        <FrameLayout android:layout_width="match_parent" android:layout_height="200dp" android:background="#000000">
+            <androidx.camera.view.PreviewView android:id="@+id/collection_preview"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:contentDescription="@string/collection_preview" app:scaleType="fitCenter" app:implementationMode="compatible" />
+            <com.group_nine.asl_translator.home.HandLandmarkOverlay android:id="@+id/collection_overlay"
+                android:layout_width="match_parent" android:layout_height="match_parent" />
+        </FrameLayout>
+        <TextView android:id="@+id/collection_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="8dp" android:accessibilityLiveRegion="polite" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Button android:id="@+id/collection_camera" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/collection_start" />
+            <Button android:id="@+id/collection_switch" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/collection_switch" />
+        </LinearLayout>
+        <TextView android:id="@+id/collection_progress" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp" />
+        <Spinner android:id="@+id/collection_label" android:layout_width="match_parent" android:layout_height="48dp" />
+        <Spinner android:id="@+id/collection_hand" android:layout_width="match_parent" android:layout_height="48dp" />
+        <TextView android:id="@+id/collection_prompt" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="8dp" android:textSize="18sp" android:accessibilityLiveRegion="polite" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Button android:id="@+id/collection_capture" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/collection_capture" />
+            <Button android:id="@+id/collection_cancel" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/collection_cancel" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/collection_privacy" android:paddingTop="12dp" />
+        <EditText android:id="@+id/collection_alias" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="@string/collection_alias" android:inputType="textNoSuggestions" android:imeOptions="flagNoExtractUi|flagNoFullscreen" android:maxLength="24" android:text="P001" />
+        <Spinner android:id="@+id/collection_split" android:layout_width="match_parent" android:layout_height="48dp" />
+        <Button android:id="@+id/collection_new" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/collection_new" />
+        <Button android:id="@+id/collection_reference" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/collection_reference" />
+        <Button android:id="@+id/collection_export" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/collection_export" />
+        <Button android:id="@+id/collection_delete" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/collection_delete" />
+        <Button android:id="@+id/collection_close" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/collection_close" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

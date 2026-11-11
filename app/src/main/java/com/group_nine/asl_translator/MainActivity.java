@@ -48,7 +48,10 @@ public class MainActivity extends AppCompatActivity {
                     | WindowInsetsCompat.Type.displayCutout());
             // DrawerLayout positions its children without honoring its own padding.
             // Apply safe areas to the content shell and drawer contents instead.
-            findViewById(R.id.main_shell).setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            int keyboardBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            findViewById(R.id.main_shell).setPadding(safe.left, safe.top, safe.right, Math.max(safe.bottom, keyboardBottom));
+            findViewById(R.id.bottom_chrome).setVisibility(insets.isVisible(WindowInsetsCompat.Type.ime())
+                    ? android.view.View.GONE : android.view.View.VISIBLE);
             findViewById(R.id.drawer_navigation).setPadding(safe.left, safe.top, safe.right, safe.bottom);
             // Shell owns insets; prevent Material children from applying them again.
             return WindowInsetsCompat.CONSUMED;
@@ -56,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         ViewCompat.requestApplyInsets(drawer);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        CollectionTools.install(this, toolbar);
         toolbar.setNavigationOnClickListener(view -> drawer.openDrawer(GravityCompat.START));
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -66,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.action_logout) {
                 performLogout();
             } else {
-                return false;
+                return CollectionTools.handle(this, item);
             }
             return true;
         });

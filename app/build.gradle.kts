@@ -29,14 +29,24 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    androidResources {
+        noCompress += "task"
+    }
 }
 
 dependencies {
+    implementation(project(":recognition-core"))
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
     implementation(libs.material)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+    implementation(libs.mediapipe.vision)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.intents)
     androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.uiautomator)
 }

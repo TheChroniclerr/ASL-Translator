@@ -1,0 +1,5 @@
+Public Domain.
+
+JSON-java version 20240303
+Source: https://github.com/stleary/JSON-java/tree/20240303
+License source: https://raw.githubusercontent.com/stleary/JSON-java/20240303/LICENSE
