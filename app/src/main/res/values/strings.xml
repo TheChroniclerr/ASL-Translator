@@ -37,13 +37,21 @@
     <string name="dictionary_description">Dictionary needs to be populated</string>
     <string name="settings_description">Settings Page Description</string>
     <string name="sign_up_description">Sign up get started!</string>
-    <string name="login_title">Welcome Back</string>
-    <string name="login_subtitle">Sign in to sync your dictionary and translation history</string>
+    <string name="login_title">ASL Translator</string>
+    <string name="login_subtitle">Sign in to start translating</string>
     <string name="email_address">Email Address</string>
     <string name="password">Password</string>
     <string name="sign_in">Sign In</string>
     <string name="no_account_prompt">Don\'t have an account? </string>
     <string name="sign_up">Sign Up</string>
+    <string name="drawer_profile">Account Profile</string>
+    <string name="drawer_alphabet">ASL Alphabet Guide</string>
+    <string name="drawer_clear_history">Clear History</string>
+    <string name="profile_dialog_message">User: %1$s\nEmail: %2$s\nStatus: Active Session</string>
+    <string name="alphabet_dialog_message">Fingerspelling Guide:\n• Use flat handshape for B, D, F\n• Face palm forward at chest height\n• Keep steady movement for clean detection</string>
+    <string name="clear_history_prompt">Are you sure you want to clear your saved translation history? This cannot be undone.</string>
+    <string name="clear_history_success">Translation history cleared.</string>
+    <string name="clear_action">Clear</string>
     <string-array name="language_options">
         <item>ASL</item>
         <item>English</item>
