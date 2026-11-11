@@ -6,7 +6,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
@@ -15,20 +14,29 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import com.group_nine.asl_translator.R;
 
 /**
- * Controls the split inside Home, independently of the stationary app chrome.
- * Stores a ratio rather than pixels. Measured text and controls establish the
- * bounds; exceptionally short windows scroll instead of hiding essential content.
+ * Controls the split inside Home between the top camera panel and bottom translation panel.
+ * Hides the camera panel completely when dragged all the way up, and stays bounded above the bottom bar.
  */
 public final class ResizablePanelController {
-    public static final float DEFAULT_SPLIT = 0.45f;
+    public static final float DEFAULT_SPLIT = 0.50f;
+    private static final int SNAP_CLOSE_DP = 16;
+    private static final int MIN_TRANSLATION_DP = 48;
+
     private final View root;
     private final View space;
+    private final View camera;
     private final View translation;
     private final View divider;
+    private final View previewIcon;
+    private final View cameraStatus;
+    private final View liveCaption;
     private final GestureDetector gestures;
     private final View.OnLayoutChangeListener layoutListener;
     private final Runnable initialLayout = this::apply;
     private final int touchSlop;
+    private final int snapClosePx;
+    private final int minTranslationPx;
+
     private float split;
     private float downY;
     private int downHeight;
@@ -36,14 +44,23 @@ public final class ResizablePanelController {
     private boolean dragging;
     private boolean doubleTap;
 
-
     public ResizablePanelController(View root, float restoredSplit) {
         this.root = root;
         space = root.findViewById(R.id.resizable_space);
+        camera = root.findViewById(R.id.camera_panel);
         translation = root.findViewById(R.id.translation_panel);
         divider = root.findViewById(R.id.resize_divider);
-        split = Float.isFinite(restoredSplit) ? Math.max(0, Math.min(1, restoredSplit)) : DEFAULT_SPLIT;
+        previewIcon = root.findViewById(R.id.preview_icon);
+        cameraStatus = root.findViewById(R.id.camera_status);
+        liveCaption = root.findViewById(R.id.live_caption);
+
+        float density = root.getResources().getDisplayMetrics().density;
+        snapClosePx = Math.round(SNAP_CLOSE_DP * density);
+        minTranslationPx = Math.round(MIN_TRANSLATION_DP * density);
+
+        split = Float.isFinite(restoredSplit) ? Math.max(0f, Math.min(1f, restoredSplit)) : DEFAULT_SPLIT;
         touchSlop = ViewConfiguration.get(root.getContext()).getScaledTouchSlop();
+
         gestures = new GestureDetector(root.getContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDown(@NonNull MotionEvent event) {
@@ -57,6 +74,7 @@ public final class ResizablePanelController {
                 return true;
             }
         });
+
         divider.setOnTouchListener(this::onTouch);
         divider.setOnClickListener(view -> reset());
         divider.setOnKeyListener((view, key, event) -> {
@@ -64,27 +82,28 @@ public final class ResizablePanelController {
                 return false;
             }
             if (key == KeyEvent.KEYCODE_DPAD_UP) {
-                adjust(-0.05f);
+                adjust(-0.08f);
                 return true;
             }
             if (key == KeyEvent.KEYCODE_DPAD_DOWN) {
-                adjust(0.05f);
+                adjust(0.08f);
                 return true;
             }
-            return false; // Enter/Space use the normal click-to-reset action.
+            return false;
         });
+
         ViewCompat.replaceAccessibilityAction(divider,
                 AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_SCROLL_FORWARD,
-                root.getContext().getString(R.string.resize_more_translation),
+                root.getContext().getString(R.string.resize_more_camera),
                 (view, args) -> {
-                    adjust(0.05f);
+                    adjust(0.08f);
                     return true;
                 });
         ViewCompat.replaceAccessibilityAction(divider,
                 AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_SCROLL_BACKWARD,
-                root.getContext().getString(R.string.resize_more_camera),
+                root.getContext().getString(R.string.resize_more_translation),
                 (view, args) -> {
-                    adjust(-0.05f);
+                    adjust(-0.08f);
                     return true;
                 });
         ViewCompat.replaceAccessibilityAction(divider,
@@ -94,7 +113,12 @@ public final class ResizablePanelController {
                     reset();
                     return true;
                 });
-        layoutListener = (view, l, top, r, b, oldL, oldT, oldR, oldB) -> apply();
+
+        layoutListener = (view, l, top, r, b, oldL, oldT, oldR, oldB) -> {
+            if ((b - top) != (oldB - oldT) || (r - l) != (oldR - oldL)) {
+                apply();
+            }
+        };
         space.addOnLayoutChangeListener(layoutListener);
         space.post(initialLayout);
     }
@@ -104,44 +128,47 @@ public final class ResizablePanelController {
             doubleTap = false;
             pointerId = event.getPointerId(0);
             downY = event.getRawY();
-            downHeight = translation.getHeight();
+            downHeight = (camera.getVisibility() == View.GONE) ? 0 : camera.getHeight();
             dragging = false;
             view.getParent().requestDisallowInterceptTouchEvent(true);
         }
         gestures.onTouchEvent(event);
+
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_MOVE:
                 if (pointerId == -1 || doubleTap) {
                     break;
                 }
-                int index = event.findPointerIndex(pointerId);
-                if (index < 0) {
-                    break;
-                }
-                float rawY = event.getY(index) + event.getRawY() - event.getY();
-                float delta = rawY - downY;
+                float delta = event.getRawY() - downY;
                 if (Math.abs(delta) > touchSlop) {
                     dragging = true;
                 }
-                if (dragging && availableHeight() > 0) {
-                    split = (downHeight + delta) / availableHeight();
+                int available = availableHeight();
+                if (dragging && available > 0) {
+                    int maxCamera = Math.max(0, available - Math.min(minTranslationPx, available / 4));
+                    int rawHeight = Math.round(downHeight + delta);
+
+                    // Snap to 0 (completely hidden) when dragged near the very top
+                    int clampedHeight = (rawHeight <= snapClosePx)
+                            ? 0
+                            : Math.min(maxCamera, rawHeight);
+
+                    split = clampedHeight / (float) available;
                     apply();
-                    // Persist the actual bounded split, including at drag extremes.
-                    split = translation.getLayoutParams().height / (float) availableHeight();
                 }
                 break;
+
             case MotionEvent.ACTION_POINTER_UP:
                 if (event.getPointerId(event.getActionIndex()) == pointerId) {
                     finishTouch(view);
                 }
                 break;
+
             case MotionEvent.ACTION_UP:
-                // Touch uses double-tap to reset; keyboard/accessibility use click.
-                finishTouch(view);
-                break;
             case MotionEvent.ACTION_CANCEL:
                 finishTouch(view);
                 break;
+
             default:
                 break;
         }
@@ -155,61 +182,52 @@ public final class ResizablePanelController {
     }
 
     private int availableHeight() {
-        return space.getHeight() - space.getPaddingTop() - space.getPaddingBottom() - divider.getHeight();
-    }
-
-    private int textMinimum(int id, boolean fullText) {
-        TextView text = root.findViewById(id);
-        if (fullText) {
-            text.measure(View.MeasureSpec.makeMeasureSpec(Math.max(1, space.getWidth()), View.MeasureSpec.EXACTLY),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            return text.getMeasuredHeight();
-        }
-        // Keep two lines in both translation areas; longer text scrolls locally.
-        return 2 * text.getLineHeight() + text.getPaddingTop() + text.getPaddingBottom();
+        return Math.max(0, space.getHeight() - space.getPaddingTop() - space.getPaddingBottom() - divider.getHeight());
     }
 
     private void apply() {
-        if (space.getWidth() <= 0 || divider.getHeight() <= 0) {
+        int available = availableHeight();
+        if (space.getWidth() <= 0 || available <= 0) {
             return;
         }
-        int translationMin = textMinimum(R.id.translation_input, false)
-                + textMinimum(R.id.translation_output, false) + 2;
-        View controls = root.findViewById(R.id.camera_controls);
-        controls.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        View preview = root.findViewById(R.id.camera_preview);
-        int previewMin = Math.max(preview.getMinimumHeight(),
-                textMinimum(R.id.camera_status, true) + preview.getPaddingTop() + preview.getPaddingBottom());
-        int cameraMin = controls.getMeasuredHeight() + textMinimum(R.id.live_caption, true) + previewMin;
-        int required = translationMin + cameraMin + divider.getHeight()
-                + space.getPaddingTop() + space.getPaddingBottom();
-        if (space.getMinimumHeight() != required) {
-            space.setMinimumHeight(required);
+
+        int maxCamera = Math.max(0, available - Math.min(minTranslationPx, available / 4));
+        int cameraHeight = Math.max(0, Math.min(maxCamera, Math.round(available * split)));
+
+        if (cameraHeight <= snapClosePx) {
+            cameraHeight = 0;
         }
-        int available = availableHeight();
-        if (available < translationMin + cameraMin) {
-            return; // A following layout expands scroll content.
+
+        if (cameraHeight == 0) {
+            camera.setVisibility(View.GONE);
+        } else {
+            if (camera.getVisibility() != View.VISIBLE) {
+                camera.setVisibility(View.VISIBLE);
+            }
+            ViewGroup.LayoutParams camParams = camera.getLayoutParams();
+            if (camParams.height != cameraHeight) {
+                camParams.height = cameraHeight;
+                camera.setLayoutParams(camParams);
+            }
         }
-        int height = Math.max(translationMin, Math.min(available - cameraMin, Math.round(available * split)));
-        if (translation.getLayoutParams().height != height) {
-            ViewGroup.LayoutParams params = translation.getLayoutParams();
-            params.height = height;
-            translation.setLayoutParams(params);
+
+        if (liveCaption != null) {
+            liveCaption.setVisibility(cameraHeight > 70 ? View.VISIBLE : View.GONE);
         }
-        int iconHeight = root.getResources().getDimensionPixelSize(R.dimen.icon_size);
-        root.findViewById(R.id.preview_icon).setVisibility(
-                available - height - cameraMin >= iconHeight ? View.VISIBLE : View.GONE);
-        int percent = Math.round(height * 100f / available);
+        if (cameraStatus != null) {
+            cameraStatus.setVisibility(cameraHeight > 120 ? View.VISIBLE : View.GONE);
+        }
+        if (previewIcon != null) {
+            previewIcon.setVisibility(cameraHeight > 170 ? View.VISIBLE : View.GONE);
+        }
+
+        int cameraPercent = Math.round(cameraHeight * 100f / available);
         ViewCompat.setStateDescription(divider, root.getContext().getString(
-                R.string.split_state, percent, 100 - percent));
+                R.string.split_state, 100 - cameraPercent, cameraPercent));
     }
 
     private void adjust(float amount) {
-        if (availableHeight() > 0) {
-            split = translation.getHeight() / (float) availableHeight();
-        }
-        split = Math.max(0, Math.min(1, split + amount));
+        split = Math.max(0f, Math.min(1f, split + amount));
         apply();
     }
 
@@ -219,7 +237,7 @@ public final class ResizablePanelController {
     }
 
     public float getSplit() {
-        return Math.max(0, Math.min(1, split));
+        return Math.max(0f, Math.min(1f, split));
     }
 
     public void dispose() {
