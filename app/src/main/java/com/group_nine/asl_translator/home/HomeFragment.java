@@ -8,54 +8,52 @@ import android.speech.RecognizerIntent;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.group_nine.asl_translator.R;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
-/** Home screen with full-range resizable camera preview and editable translation output. */
 public class HomeFragment extends Fragment {
-    private static final String SPLIT = "home.split";
-    private static final String SOURCE = "home.source";
-    private static final String TARGET = "home.target";
-    private static final String CAMERA = "home.camera";
-    private static final String TRANSLATED_OUTPUT = "home.translated_output";
+    private static final String KEY_SPLIT = "panel_split";
+    private static final String KEY_CAMERA_ACTIVE = "camera_active";
 
-    private float split = ResizablePanelController.DEFAULT_SPLIT;
-    private int sourceIndex = 0;
-    private int targetIndex = 1;
-    private boolean cameraTapped;
-    private ResizablePanelController panels;
+    private ResizablePanelController panelController;
+    private MaterialAutoCompleteTextView sourceLanguage;
+    private MaterialAutoCompleteTextView targetLanguage;
+    private TextView cameraStatus;
+    private TextView liveCaption;
+    private EditText translationOutput;
+    private MaterialButton startCameraButton;
+    private MaterialButton microphoneButton;
+    private RecyclerView recyclerHandshapes;
+    private HandshapeAdapter handshapeAdapter;
 
-    private String translatedOutputText = "";
-    private EditText translationOutputView;
-    private TextView liveCaptionView;
+    private boolean cameraActive = false;
 
     private final ActivityResultLauncher<Intent> speechLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    ArrayList<String> matches = result.getData()
-                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    ArrayList<String> matches = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     if (matches != null && !matches.isEmpty()) {
-                        translatedOutputText = matches.get(0);
-                        if (translationOutputView != null) {
-                            translationOutputView.setText(translatedOutputText);
-                            translationOutputView.setSelection(translatedOutputText.length());
-                        }
-                        if (liveCaptionView != null) {
-                            liveCaptionView.setText("Voice captured: \"" + translatedOutputText + "\"");
-                        }
+                        String spokenText = matches.get(0);
+                        translationOutput.setText(spokenText);
+                        translationOutput.setSelection(spokenText.length());
                     }
                 }
             });
@@ -65,101 +63,148 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(@Nullable Bundle state) {
-        super.onCreate(state);
-        if (state != null) {
-            split = state.getFloat(SPLIT, split);
-            sourceIndex = state.getInt(SOURCE, 0);
-            targetIndex = state.getInt(TARGET, 1);
-            cameraTapped = state.getBoolean(CAMERA);
-            translatedOutputText = state.getString(TRANSLATED_OUTPUT, "");
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        float restoredSplit = savedInstanceState != null
+                ? savedInstanceState.getFloat(KEY_SPLIT, ResizablePanelController.DEFAULT_SPLIT)
+                : ResizablePanelController.DEFAULT_SPLIT;
+        cameraActive = savedInstanceState != null && savedInstanceState.getBoolean(KEY_CAMERA_ACTIVE, false);
+
+        panelController = new ResizablePanelController(view, restoredSplit);
+
+        sourceLanguage = view.findViewById(R.id.source_language);
+        targetLanguage = view.findViewById(R.id.target_language);
+        cameraStatus = view.findViewById(R.id.camera_status);
+        liveCaption = view.findViewById(R.id.live_caption);
+        translationOutput = view.findViewById(R.id.translation_output);
+        startCameraButton = view.findViewById(R.id.start_camera);
+        microphoneButton = view.findViewById(R.id.microphone);
+        recyclerHandshapes = view.findViewById(R.id.recycler_handshapes);
+
+        setupLanguageDropdowns();
+        setupHandshapeStrip();
+        setupControls();
+        updateCameraUi();
+    }
+
+    private void setupLanguageDropdowns() {
+        String[] languages = new String[]{"ASL", "English", "French", "Spanish"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                languages
+        );
+        sourceLanguage.setAdapter(adapter);
+        targetLanguage.setAdapter(adapter);
+
+        if (sourceLanguage.getText().toString().isEmpty()) {
+            sourceLanguage.setText(languages[0], false);
+        }
+        if (targetLanguage.getText().toString().isEmpty()) {
+            targetLanguage.setText(languages[1], false);
         }
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
-        String[] languages = getResources().getStringArray(R.array.language_options);
-        MaterialAutoCompleteTextView source = view.findViewById(R.id.source_language);
-        MaterialAutoCompleteTextView target = view.findViewById(R.id.target_language);
-        source.setSimpleItems(languages);
-        target.setSimpleItems(languages);
-        sourceIndex = Math.max(0, Math.min(sourceIndex, languages.length - 1));
-        targetIndex = Math.max(0, Math.min(targetIndex, languages.length - 1));
-        source.setText(languages[sourceIndex], false);
-        target.setText(languages[targetIndex], false);
-        source.setOnItemClickListener((parent, item, position, id) -> sourceIndex = position);
-        target.setOnItemClickListener((parent, item, position, id) -> targetIndex = position);
+    private void setupHandshapeStrip() {
+        handshapeAdapter = new HandshapeAdapter();
+        recyclerHandshapes.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        );
+        recyclerHandshapes.setAdapter(handshapeAdapter);
 
-        translationOutputView = view.findViewById(R.id.translation_output);
-        liveCaptionView = view.findViewById(R.id.live_caption);
-
-        if (!translatedOutputText.isEmpty()) {
-            translationOutputView.setText(translatedOutputText);
-            liveCaptionView.setText("Voice captured: \"" + translatedOutputText + "\"");
-        }
-
-        translationOutputView.addTextChangedListener(new TextWatcher() {
+        translationOutput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                translatedOutputText = s.toString();
+                updateHandshapes(s != null ? s.toString() : "");
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
-        TextView status = view.findViewById(R.id.camera_status);
-        status.setText(cameraTapped ? R.string.camera_unavailable : R.string.camera_placeholder);
-        view.findViewById(R.id.start_camera).setOnClickListener(button -> {
-            cameraTapped = true;
-            status.setText(R.string.camera_unavailable);
-        });
-
-        view.findViewById(R.id.microphone).setOnClickListener(button -> startVoiceToText(view));
-
-        panels = new ResizablePanelController(view, split);
+        updateHandshapes(translationOutput.getText().toString());
     }
 
-    private void startVoiceToText(View rootView) {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now to translate...");
+    private void setupControls() {
+        startCameraButton.setOnClickListener(v -> {
+            cameraActive = !cameraActive;
+            updateCameraUi();
+        });
 
+        microphoneButton.setOnClickListener(v -> startVoiceInput());
+    }
+
+    private void updateCameraUi() {
+        if (cameraActive) {
+            cameraStatus.setText("Camera active — detecting signs...");
+            liveCaption.setText("Listening for ASL gestures...");
+            startCameraButton.setText("Stop Camera");
+        } else {
+            cameraStatus.setText(R.string.camera_placeholder);
+            liveCaption.setText(R.string.live_translation);
+            startCameraButton.setText(R.string.start_camera);
+        }
+    }
+
+    private void startVoiceInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.microphone));
         try {
             speechLauncher.launch(intent);
         } catch (ActivityNotFoundException e) {
-            Snackbar.make(rootView, "Speech recognition is not supported on this device.",
-                    Snackbar.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Speech recognition not supported on this device", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateHandshapes(String text) {
+        List<HandshapeItem> list = new ArrayList<>();
+        for (char c : text.toCharArray()) {
+            if (Character.isLetter(c)) {
+                char upper = Character.toUpperCase(c);
+                list.add(new HandshapeItem(upper, getVowelDrawable(upper)));
+            }
+        }
+        handshapeAdapter.setItems(list);
+    }
+
+    private int getVowelDrawable(char c) {
+        switch (c) {
+            case 'A':
+                return R.drawable.ic_asl_a;
+            case 'E':
+                return R.drawable.ic_asl_e;
+            case 'I':
+                return R.drawable.ic_asl_i;
+            case 'O':
+                return R.drawable.ic_asl_o;
+            case 'U':
+                return R.drawable.ic_asl_u;
+            default:
+                return 0;
         }
     }
 
     @Override
-    public void onSaveInstanceState(@NonNull Bundle out) {
-        if (panels != null) {
-            split = panels.getSplit();
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (panelController != null) {
+            outState.putFloat(KEY_SPLIT, panelController.getSplit());
         }
-        out.putFloat(SPLIT, split);
-        out.putInt(SOURCE, sourceIndex);
-        out.putInt(TARGET, targetIndex);
-        out.putBoolean(CAMERA, cameraTapped);
-        out.putString(TRANSLATED_OUTPUT, translatedOutputText);
-        super.onSaveInstanceState(out);
+        outState.putBoolean(KEY_CAMERA_ACTIVE, cameraActive);
     }
 
     @Override
     public void onDestroyView() {
-        if (panels != null) {
-            split = panels.getSplit();
-            panels.dispose();
-            panels = null;
+        if (panelController != null) {
+            panelController.dispose();
+            panelController = null;
         }
-        translationOutputView = null;
-        liveCaptionView = null;
         super.onDestroyView();
     }
 }

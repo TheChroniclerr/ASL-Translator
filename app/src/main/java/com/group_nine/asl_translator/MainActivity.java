@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
@@ -21,16 +24,19 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
+import com.group_nine.asl_translator.alphabet.AlphabetFragment;
 import com.group_nine.asl_translator.auth.LoginActivity;
-import com.group_nine.asl_translator.dictionary.DictionaryFragment;
+import com.group_nine.asl_translator.bookmarks.BookmarksFragment;
+import com.group_nine.asl_translator.bookmarks.BookmarksRepository;
 import com.group_nine.asl_translator.history.HistoryFragment;
 import com.group_nine.asl_translator.home.HomeFragment;
+import com.group_nine.asl_translator.profile.ProfileFragment;
 import com.group_nine.asl_translator.settings.SettingsFragment;
 
-/** Shared chrome and destination switching. Feature UI belongs to Fragments. */
 public class MainActivity extends AppCompatActivity {
     private static final String STATE_DESTINATION = "destination";
+    private static final String PREFS_NAME = "ASL_User_Prefs";
+    private static final String KEY_DARK_MODE = "dark_mode";
 
     private int destination = R.id.nav_home;
     private DrawerLayout drawer;
@@ -38,6 +44,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle state) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if (prefs.contains(KEY_DARK_MODE)) {
+            boolean isDark = prefs.getBoolean(KEY_DARK_MODE, false);
+            AppCompatDelegate.setDefaultNightMode(
+                    isDark ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
         super.onCreate(state);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -46,11 +59,8 @@ public class MainActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(drawer, (view, insets) -> {
             Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
-            // DrawerLayout positions its children without honoring its own padding.
-            // Apply safe areas to the content shell and drawer contents instead.
             findViewById(R.id.main_shell).setPadding(safe.left, safe.top, safe.right, safe.bottom);
             findViewById(R.id.drawer_navigation).setPadding(safe.left, safe.top, safe.right, safe.bottom);
-            // Shell owns insets; prevent Material children from applying them again.
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(drawer);
@@ -74,7 +84,13 @@ public class MainActivity extends AppCompatActivity {
         NavigationView drawerNavigation = findViewById(R.id.drawer_navigation);
         drawerNavigation.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.action_logout) {
+            if (id == R.id.nav_drawer_profile) {
+                showDestination(R.id.nav_drawer_profile);
+            } else if (id == R.id.nav_drawer_alphabet) {
+                showDestination(R.id.nav_drawer_alphabet);
+            } else if (id == R.id.nav_drawer_clear_history) {
+                showInfo(R.string.drawer_clear_history, R.string.about_message);
+            } else if (id == R.id.action_logout) {
                 performLogout();
                 return true;
             }
@@ -90,16 +106,17 @@ public class MainActivity extends AppCompatActivity {
         }
         showDestination(destination);
         navigation.setSelectedItemId(destination);
+
         navigation.setOnItemSelectedListener(item -> {
             if (item.getItemId() == R.id.nav_add) {
-                showInfo(R.string.add, R.string.add_message);
+                bookmarkCurrentTranslation();
                 return false;
             }
             showDestination(item.getItemId());
             return true;
         });
         findViewById(R.id.add_button).setOnClickListener(view ->
-                showInfo(R.string.add, R.string.add_message));
+                bookmarkCurrentTranslation());
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -118,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
-        SharedPreferences prefs = getSharedPreferences("ASL_User_Prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit()
                 .putBoolean("is_logged_in", false)
                 .apply();
@@ -129,6 +146,25 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
+    private void bookmarkCurrentTranslation() {
+        Fragment homeFragment = getSupportFragmentManager().findFragmentByTag("home");
+        String textToSave = "";
+
+        if (homeFragment != null && homeFragment.getView() != null) {
+            EditText output = homeFragment.getView().findViewById(R.id.translation_output);
+            if (output != null) {
+                textToSave = output.getText().toString().trim();
+            }
+        }
+
+        if (textToSave.isEmpty()) {
+            Toast.makeText(this, "Enter or translate text first to bookmark", Toast.LENGTH_SHORT).show();
+        } else {
+            BookmarksRepository.getInstance().addBookmark(textToSave);
+            Toast.makeText(this, "Bookmarked \"" + textToSave + "\"", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void showDestination(int id) {
         String tag;
         if (id == R.id.nav_recents) {
@@ -137,6 +173,10 @@ public class MainActivity extends AppCompatActivity {
             tag = "dictionary";
         } else if (id == R.id.nav_settings) {
             tag = "settings";
+        } else if (id == R.id.nav_drawer_profile) {
+            tag = "profile";
+        } else if (id == R.id.nav_drawer_alphabet) {
+            tag = "alphabet";
         } else {
             id = R.id.nav_home;
             tag = "home";
@@ -153,10 +193,16 @@ public class MainActivity extends AppCompatActivity {
                     target = new HistoryFragment();
                     break;
                 case "dictionary":
-                    target = new DictionaryFragment();
+                    target = new BookmarksFragment();
                     break;
                 case "settings":
                     target = new SettingsFragment();
+                    break;
+                case "profile":
+                    target = new ProfileFragment();
+                    break;
+                case "alphabet":
+                    target = new AlphabetFragment();
                     break;
                 default:
                     target = new HomeFragment();
