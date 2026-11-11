@@ -2,6 +2,8 @@
     <style name="Base.Theme.ASLTraslator" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/asl_primary</item>
         <item name="colorOnPrimary">@color/asl_on_primary</item>
+        <item name="colorPrimaryContainer">@color/asl_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/asl_on_primary_container</item>
         <item name="colorSecondary">@color/asl_primary</item>
         <item name="colorSurface">@color/asl_surface</item>
         <item name="colorOnSurface">@color/asl_text</item>
@@ -10,7 +12,9 @@
         <item name="android:colorBackground">@color/asl_background</item>
         <item name="android:windowBackground">@color/asl_background</item>
     </style>
+
     <style name="Theme.ASLTraslator" parent="Base.Theme.ASLTraslator" />
+
     <style name="ShapeAppearanceOverlay.Asl.Circle" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>

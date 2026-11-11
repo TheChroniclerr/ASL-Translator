@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+
     android:background="@color/asl_background">
     <LinearLayout
         android:id="@+id/main_shell"
@@ -29,13 +30,13 @@
             android:layout_weight="1" />
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/navigation_height"
+            android:layout_height="wrap_content"
             android:clipChildren="false"
             android:clipToPadding="false">
             <com.google.android.material.bottomnavigation.BottomNavigationView
                 android:id="@+id/bottom_navigation"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/navigation_bar_height"
+                android:layout_height="80dp"
                 android:layout_gravity="bottom"
                 android:background="@color/asl_surface"
                 app:menu="@menu/bottom_navigation"
@@ -44,16 +45,17 @@
                 app:itemIconSize="24dp" />
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/add_button"
-                android:layout_width="@dimen/add_size"
-                android:layout_height="@dimen/add_size"
-                android:layout_gravity="top|center_horizontal"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_marginBottom="28dp"
                 android:contentDescription="@string/add"
                 app:srcCompat="@drawable/ic_add"
                 app:tint="@color/asl_on_primary"
                 app:backgroundTint="@color/asl_primary"
-                app:fabCustomSize="@dimen/add_size"
-                app:maxImageSize="32dp"
-                app:ensureMinTouchTargetSize="true"
+                app:fabCustomSize="56dp"
+                app:maxImageSize="28dp"
+                app:elevation="6dp"
                 app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Asl.Circle" />
         </FrameLayout>
     </LinearLayout>

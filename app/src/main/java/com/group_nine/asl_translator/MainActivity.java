@@ -1,5 +1,8 @@
 package com.group_nine.asl_translator;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -19,6 +22,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.group_nine.asl_translator.auth.LoginActivity;
 import com.group_nine.asl_translator.dictionary.DictionaryFragment;
 import com.group_nine.asl_translator.history.HistoryFragment;
 import com.group_nine.asl_translator.home.HomeFragment;
@@ -60,10 +64,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.action_about) {
                 showInfo(R.string.about, R.string.about_message);
             } else if (id == R.id.action_logout) {
-                // Future integration: clear SessionManager and open LoginActivity
-                // after authentication is implemented.
-                Snackbar.make(findViewById(R.id.content), R.string.logout_message,
-                        Snackbar.LENGTH_LONG).show();
+                performLogout();
             } else {
                 return false;
             }
@@ -72,6 +73,11 @@ public class MainActivity extends AppCompatActivity {
 
         NavigationView drawerNavigation = findViewById(R.id.drawer_navigation);
         drawerNavigation.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_logout) {
+                performLogout();
+                return true;
+            }
             drawer.closeDrawer(GravityCompat.START);
             return true;
         });
@@ -109,6 +115,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void performLogout() {
+        SharedPreferences prefs = getSharedPreferences("ASL_User_Prefs", Context.MODE_PRIVATE);
+        prefs.edit()
+                .putBoolean("is_logged_in", false)
+                .apply();
+
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void showDestination(int id) {
