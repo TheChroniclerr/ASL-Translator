@@ -255,6 +255,15 @@
                 android:scrollbars="vertical"
                 android:overScrollMode="always"
                 android:importantForAutofill="no" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_handshapes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/card_padding"
+                    android:paddingEnd="@dimen/card_padding"
+                    android:paddingBottom="8dp"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

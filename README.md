@@ -12,10 +12,13 @@ until a replacement is trained and passes evaluation on your phone recordings.
 See [capture instructions](CAPTURE_GUIDE.md), [Python training/export](REFINEMENT_TRAINING.md),
 and [refinement milestone notes](VOWEL_REFINEMENT.md). Release builds omit collection.
 
-This version combines the updated `master` UI (`d89f9c4`) with the camera/vowel
-milestone (`25b62de`). The camera sits above a resizable text editor. Live vowel
+This version combines the updated `master` UI (`4d75eed`) with the published
+`vowel-refinement` implementation (`1033134`). It retains bookmarks, settings,
+profile, alphabet guide, and the Home handshape strip. The camera sits above a
+resizable text editor. Live vowel
 results have a dedicated read-only area and never overwrite typed or dictated text.
-See [integration notes](INTEGRATION_NOTES.md) for the merge and validation details.
+See [current GUI integration notes](MASTER_GUI_INTEGRATION.md) for merge details;
+[earlier integration notes](INTEGRATION_NOTES.md) describe the previous milestone.
 
 ## Run in Android Studio
 

@@ -79,6 +79,7 @@ public class HomeFragment extends Fragment {
     private EditText translationOutputView;
     private TextWatcher editorWatcher;
     private boolean speechPending;
+    private HandshapeAdapter handshapeAdapter;
 
     private final ActivityResultLauncher<Intent> speechLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -150,6 +151,11 @@ public class HomeFragment extends Fragment {
         source.setOnItemClickListener((parent, item, position, id) -> sourceIndex = position);
         target.setOnItemClickListener((parent, item, position, id) -> targetIndex = position);
 
+        androidx.recyclerview.widget.RecyclerView strip = view.findViewById(R.id.recycler_handshapes);
+        strip.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext(),
+                androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false));
+        handshapeAdapter = new HandshapeAdapter();
+        strip.setAdapter(handshapeAdapter);
         translationOutputView = view.findViewById(R.id.translation_output);
         translationOutputView.setText(translatedOutputText);
         int length = translatedOutputText.length();
@@ -159,6 +165,7 @@ public class HomeFragment extends Fragment {
             @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
             @Override public void onTextChanged(CharSequence text, int start, int before, int count) {
                 translatedOutputText = text.toString();
+                updateHandshapes(translatedOutputText);
                 if (!speechStatus.isEmpty()) {
                     speechStatus = "";
                     renderSpeechStatus();
@@ -167,6 +174,7 @@ public class HomeFragment extends Fragment {
             @Override public void afterTextChanged(Editable text) { }
         };
         translationOutputView.addTextChangedListener(editorWatcher);
+        updateHandshapes(translatedOutputText);
         renderSpeechStatus();
 
         camera = new CameraPreviewController(requireContext(), getViewLifecycleOwner(),
@@ -181,6 +189,27 @@ public class HomeFragment extends Fragment {
         });
         renderCamera(CameraPreviewController.State.IDLE, R.string.camera_placeholder,
                 session.lensFacing, false);
+    }
+
+    private void updateHandshapes(String text) {
+        if (handshapeAdapter == null) return;
+        java.util.List<HandshapeItem> items = new ArrayList<>();
+        for (char c : text.toCharArray()) {
+            if (!Character.isLetter(c)) continue;
+            char letter = Character.toUpperCase(c);
+            int drawable;
+            switch (letter) {
+                case 'A': drawable = R.drawable.ic_asl_a; break;
+                case 'E': drawable = R.drawable.ic_asl_e; break;
+                case 'I': drawable = R.drawable.ic_asl_i; break;
+                case 'O': drawable = R.drawable.ic_asl_o; break;
+                case 'U': drawable = R.drawable.ic_asl_u; break;
+                default: drawable = 0;
+            }
+            items.add(new HandshapeItem(letter, drawable));
+        }
+        handshapeAdapter.setItems(items);
+        if (panels != null) panels.refresh();
     }
 
     private boolean hasCameraPermission() {
@@ -466,6 +495,8 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        ((androidx.recyclerview.widget.RecyclerView) requireView().findViewById(R.id.recycler_handshapes)).setAdapter(null);
+        handshapeAdapter = null;
         if (translationOutputView != null) {
             translatedOutputText = translationOutputView.getText().toString();
             selectionStart = translationOutputView.getSelectionStart();

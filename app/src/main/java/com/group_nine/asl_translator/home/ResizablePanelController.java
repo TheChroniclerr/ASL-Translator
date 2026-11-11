@@ -198,7 +198,10 @@ public final class ResizablePanelController {
         View header = root.findViewById(R.id.editor_header);
         header.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        int editorMinimum = minTranslationPx + header.getMeasuredHeight() + 1;
+        View strip = root.findViewById(R.id.recycler_handshapes);
+        strip.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int editorMinimum = minTranslationPx + header.getMeasuredHeight() + strip.getMeasuredHeight() + 1;
         View controls = root.findViewById(R.id.camera_controls);
         controls.measure(View.MeasureSpec.makeMeasureSpec(space.getWidth(), View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));

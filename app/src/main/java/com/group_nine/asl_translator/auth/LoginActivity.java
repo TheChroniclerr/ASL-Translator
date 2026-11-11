@@ -46,7 +46,6 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         btnLogin.setOnClickListener(v -> handleLogin());
-
     }
 
     private void handleLogin() {
@@ -73,7 +72,13 @@ public class LoginActivity extends AppCompatActivity {
         String savedPassword = prefs.getString("saved_password", "");
 
         if (savedEmail.isEmpty() || (email.equals(savedEmail) && password.equals(savedPassword))) {
-            prefs.edit().putBoolean("is_logged_in", true).putString("saved_email", email).apply();
+            prefs.edit()
+                    .putBoolean("is_logged_in", true)
+                    .putString("saved_email", email)
+                    .putString("user_email", email)
+                    .putString("saved_password", password)
+                    .putString("user_password", password)
+                    .apply();
 
             Snackbar.make(findViewById(android.R.id.content), "Signed in successfully!", Snackbar.LENGTH_SHORT).show();
             findViewById(android.R.id.content).postDelayed(() -> {
@@ -87,8 +92,3 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 }
-
-
-
-
-
