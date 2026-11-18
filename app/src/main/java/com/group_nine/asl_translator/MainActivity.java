@@ -28,6 +28,7 @@ import com.group_nine.asl_translator.alphabet.AlphabetFragment;
 import com.group_nine.asl_translator.auth.LoginActivity;
 import com.group_nine.asl_translator.bookmarks.BookmarksFragment;
 import com.group_nine.asl_translator.bookmarks.BookmarksRepository;
+import com.group_nine.asl_translator.database.ASLDataSource;
 import com.group_nine.asl_translator.history.HistoryFragment;
 import com.group_nine.asl_translator.home.HomeFragment;
 import com.group_nine.asl_translator.profile.ProfileFragment;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private int destination = R.id.nav_home;
     private DrawerLayout drawer;
     private BottomNavigationView navigation;
+    private ASLDataSource datasource;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -55,14 +57,17 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        BookmarksRepository.getInstance().init(this);
+        datasource = new ASLDataSource(this);
+        datasource.open();
+
         drawer = findViewById(R.id.main);
         ViewCompat.setOnApplyWindowInsetsListener(drawer, (view, insets) -> {
             Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
             int keyboardBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
             findViewById(R.id.main_shell).setPadding(safe.left, safe.top, safe.right, Math.max(safe.bottom, keyboardBottom));
-            findViewById(R.id.bottom_chrome).setVisibility(insets.isVisible(WindowInsetsCompat.Type.ime())
-                    ? android.view.View.GONE : android.view.View.VISIBLE);
+            findViewById(R.id.bottom_chrome).setVisibility(android.view.View.VISIBLE);
             findViewById(R.id.drawer_navigation).setPadding(safe.left, safe.top, safe.right, safe.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
@@ -93,7 +98,17 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.nav_drawer_alphabet) {
                 showDestination(R.id.nav_drawer_alphabet);
             } else if (id == R.id.nav_drawer_clear_history) {
-                showInfo(R.string.drawer_clear_history, R.string.about_message);
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.drawer_clear_history)
+                        .setMessage("Delete all recent search and translation history?")
+                        .setPositiveButton("Clear All", (dialog, which) -> {
+                            if (datasource != null) {
+                                datasource.clearRecentSearches();
+                            }
+                            Toast.makeText(this, "History cleared", Toast.LENGTH_SHORT).show();
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
             } else if (id == R.id.action_logout) {
                 performLogout();
                 return true;
@@ -138,6 +153,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (datasource != null) {
+            datasource.open();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (datasource != null) {
+            datasource.close();
+        }
+        super.onPause();
+    }
+
     private void performLogout() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit()
@@ -165,6 +196,9 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Enter or translate text first to bookmark", Toast.LENGTH_SHORT).show();
         } else {
             BookmarksRepository.getInstance().addBookmark(textToSave);
+            if (datasource != null) {
+                datasource.addRecentSearch(textToSave);
+            }
             Toast.makeText(this, "Bookmarked \"" + textToSave + "\"", Toast.LENGTH_SHORT).show();
         }
     }

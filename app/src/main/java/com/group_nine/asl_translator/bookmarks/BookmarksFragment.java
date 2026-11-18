@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.group_nine.asl_translator.R;
+import com.group_nine.asl_translator.database.ASLDataSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ public class BookmarksFragment extends Fragment {
     private BookmarksAdapter adapter;
     private View emptyStateView;
     private String currentQuery = "";
+    private ASLDataSource datasource;
 
     public BookmarksFragment() {
         super(R.layout.fragment_bookmarks);
@@ -33,6 +35,10 @@ public class BookmarksFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        BookmarksRepository.getInstance().init(requireContext());
+        datasource = new ASLDataSource(requireContext());
+        datasource.open();
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_bookmarks);
         emptyStateView = view.findViewById(R.id.layout_empty_state);
@@ -56,15 +62,62 @@ public class BookmarksFragment extends Fragment {
                 @Override
                 public void afterTextChanged(Editable s) {}
             });
+
+            searchEdit.setOnFocusChangeListener((v, hasFocus) -> {
+                if (!hasFocus && !currentQuery.isEmpty() && datasource != null) {
+                    datasource.addRecentSearch(currentQuery);
+                }
+            });
+
+            searchEdit.setOnLongClickListener(v -> {
+                showRecentSearchesDialog(searchEdit);
+                return true;
+            });
         }
 
         refreshData();
     }
 
+    private void showRecentSearchesDialog(EditText searchEdit) {
+        if (datasource == null) return;
+        List<String> recent = datasource.getRecentSearches();
+        if (recent.isEmpty()) {
+            Toast.makeText(requireContext(), "No recent searches yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] items = recent.toArray(new String[0]);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Recent Searches")
+                .setItems(items, (dialog, which) -> {
+                    searchEdit.setText(items[which]);
+                    searchEdit.setSelection(items[which].length());
+                })
+                .setNeutralButton("Clear History", (dialog, which) -> {
+                    datasource.clearRecentSearches();
+                    Toast.makeText(requireContext(), "Search history cleared", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
     @Override
     public void onResume() {
         super.onResume();
+        if (datasource != null) {
+            datasource.open();
+        }
         refreshData();
+    }
+
+    @Override
+    public void onPause() {
+        if (!currentQuery.isEmpty() && datasource != null) {
+            datasource.addRecentSearch(currentQuery);
+        }
+        if (datasource != null) {
+            datasource.close();
+        }
+        super.onPause();
     }
 
     public void refreshData() {

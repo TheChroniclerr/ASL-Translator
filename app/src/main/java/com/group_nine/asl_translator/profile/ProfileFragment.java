@@ -21,6 +21,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.group_nine.asl_translator.R;
 import com.group_nine.asl_translator.auth.LoginActivity;
 import com.group_nine.asl_translator.bookmarks.BookmarksRepository;
+import com.group_nine.asl_translator.database.ASLDataSource;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,6 +37,7 @@ public class ProfileFragment extends Fragment {
     private TextView textMemberSince;
     private TextView textRowName;
     private TextView textRowEmail;
+    private ASLDataSource datasource;
 
     public ProfileFragment() {
         super(R.layout.fragment_profile);
@@ -44,6 +46,10 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        BookmarksRepository.getInstance().init(requireContext());
+        datasource = new ASLDataSource(requireContext());
+        datasource.open();
 
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
@@ -75,6 +81,22 @@ public class ProfileFragment extends Fragment {
                         .setPositiveButton("Delete Forever", (dialog, which) -> performAccountDeletion(prefs))
                         .setNegativeButton("Cancel", null)
                         .show());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (datasource != null) {
+            datasource.open();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (datasource != null) {
+            datasource.close();
+        }
+        super.onPause();
     }
 
     private void loadUserData(SharedPreferences prefs) {
@@ -122,6 +144,10 @@ public class ProfileFragment extends Fragment {
                 .setPositiveButton("Save", (dialog, which) -> {
                     String newName = input.getText().toString().trim();
                     if (!newName.isEmpty()) {
+                        String email = prefs.getString("user_email", prefs.getString("saved_email", ""));
+                        if (datasource != null && !email.isEmpty()) {
+                            datasource.updateUserName(email, newName);
+                        }
                         prefs.edit().putString("user_name", newName).apply();
                         textProfileName.setText(newName);
                         textRowName.setText(newName);
@@ -183,6 +209,11 @@ public class ProfileFragment extends Fragment {
                         return;
                     }
 
+                    String email = prefs.getString("user_email", prefs.getString("saved_email", ""));
+                    if (datasource != null && !email.isEmpty()) {
+                        datasource.updateUserPassword(email, newPass);
+                    }
+
                     prefs.edit()
                             .putString("user_password", newPass)
                             .putString("saved_password", newPass)
@@ -194,6 +225,13 @@ public class ProfileFragment extends Fragment {
     }
 
     private void performAccountDeletion(SharedPreferences prefs) {
+        String email = prefs.getString("user_email", prefs.getString("saved_email", ""));
+        if (datasource != null) {
+            if (!email.isEmpty()) {
+                datasource.deleteUser(email);
+            }
+            datasource.clearRecentSearches();
+        }
         prefs.edit().clear().apply();
         BookmarksRepository.getInstance().clearAll();
 
