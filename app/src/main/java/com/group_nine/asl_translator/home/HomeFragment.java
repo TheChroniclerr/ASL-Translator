@@ -36,6 +36,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.group_nine.asl_translator.R;
+import com.group_nine.asl_translator.bookmarks.BookmarksRepository;
+import com.group_nine.asl_translator.database.ASLDataSource;
 import com.group_nine.asl_translator.recognition.VowelRecognitionResult;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -80,6 +82,7 @@ public class HomeFragment extends Fragment {
     private TextWatcher editorWatcher;
     private boolean speechPending;
     private HandshapeAdapter handshapeAdapter;
+    private ASLDataSource datasource;
 
     private final ActivityResultLauncher<Intent> speechLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -94,6 +97,10 @@ public class HomeFragment extends Fragment {
                     if (translationOutputView != null) {
                         translationOutputView.setText(translatedOutputText);
                         translationOutputView.setSelection(selectionStart);
+                    }
+                    if (datasource != null) {
+                        datasource.open();
+                        datasource.addRecentSearch(translatedOutputText);
                     }
                     setSpeechStatus(R.string.speech_captured);
                 } else {
@@ -124,6 +131,8 @@ public class HomeFragment extends Fragment {
         super.onCreate(state);
         session = new ViewModelProvider(this).get(CameraSession.class);
         permissionPreferences = requireContext().getSharedPreferences("ASL_Camera_Prefs", 0);
+        BookmarksRepository.getInstance().init(requireContext());
+        datasource = new ASLDataSource(requireContext());
         if (state != null) {
             split = state.getFloat(SPLIT, split);
             sourceIndex = state.getInt(SOURCE, 0);
@@ -371,7 +380,6 @@ public class HomeFragment extends Fragment {
 
     private void startVoiceToText() {
         if (speechPending) return;
-        // The external recognizer owns its microphone; release our camera before handing over.
         stopSession();
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -415,6 +423,9 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (datasource != null) {
+            datasource.open();
+        }
         if (isHidden()) {
             return;
         }
@@ -445,6 +456,12 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onPause() {
+        if (datasource != null) {
+            if (translatedOutputText != null && !translatedOutputText.trim().isEmpty()) {
+                datasource.addRecentSearch(translatedOutputText);
+            }
+            datasource.close();
+        }
         if (camera != null) {
             camera.stop();
         }
@@ -464,7 +481,6 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onStop() {
-        // Unlike onPause, this distinguishes a real departure from Activity recreation.
         if (!requireActivity().isChangingConfigurations()) {
             stopSession();
         }

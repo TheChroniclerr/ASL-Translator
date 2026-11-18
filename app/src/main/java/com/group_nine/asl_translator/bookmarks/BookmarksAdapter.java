@@ -14,10 +14,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.group_nine.asl_translator.R;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.ViewHolder> {
     public interface OnBookmarkChangedListener {
@@ -102,11 +106,45 @@ public class BookmarksAdapter extends RecyclerView.Adapter<BookmarksAdapter.View
             holder.handStrip.addView(letterCard);
         }
 
+        holder.itemView.setOnClickListener(v -> showBookmarkDetailsDialog(context, item));
+
         holder.btnDelete.setOnClickListener(v -> {
             BookmarksRepository.getInstance().removeBookmark(item);
             Toast.makeText(context, "Removed \"" + item.getWord() + "\"", Toast.LENGTH_SHORT).show();
             if (changeListener != null) changeListener.onBookmarkChanged();
         });
+    }
+
+    private void showBookmarkDetailsDialog(Context context, BookmarkItem item) {
+        String word = item.getWord();
+        int letterCount = 0;
+        StringBuilder lettersSequence = new StringBuilder();
+        for (char c : word.toCharArray()) {
+            if (Character.isLetter(c)) {
+                letterCount++;
+                if (lettersSequence.length() > 0) lettersSequence.append(" - ");
+                lettersSequence.append(Character.toUpperCase(c));
+            }
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault());
+        String savedDate = sdf.format(new Date(item.getTimestamp()));
+
+        String details = "Phrase: " + word
+                + "\nFingerspelling Sequence: " + (lettersSequence.length() > 0 ? lettersSequence : "N/A")
+                + "\nTotal ASL Handshapes: " + letterCount
+                + "\nSaved to Database: " + savedDate;
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle("Bookmark Details")
+                .setMessage(details)
+                .setPositiveButton("Close", null)
+                .setNeutralButton("Delete", (dialog, which) -> {
+                    BookmarksRepository.getInstance().removeBookmark(item);
+                    Toast.makeText(context, "Removed \"" + item.getWord() + "\"", Toast.LENGTH_SHORT).show();
+                    if (changeListener != null) changeListener.onBookmarkChanged();
+                })
+                .show();
     }
 
     private int resolveLetterDrawable(Context context, char letter) {

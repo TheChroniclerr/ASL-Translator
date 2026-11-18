@@ -16,16 +16,24 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.group_nine.asl_translator.MainActivity;
 import com.group_nine.asl_translator.R;
+import com.group_nine.asl_translator.database.ASLDataSource;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RegisterActivity extends AppCompatActivity {
     private TextInputEditText editName, editEmail, editPassword;
     private ProgressBar registerProgress;
     private MaterialButton btnCreateAccount;
+    private ASLDataSource datasource;
+    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        datasource = new ASLDataSource(this);
 
         editName = findViewById(R.id.edit_name);
         editEmail = findViewById(R.id.edit_register_email);
@@ -39,6 +47,15 @@ public class RegisterActivity extends AppCompatActivity {
         btnLinkSignIn.setOnClickListener(v -> finish());
 
         btnCreateAccount.setOnClickListener(v -> handleRegistration());
+    }
+
+    @Override
+    protected void onDestroy() {
+        databaseExecutor.shutdown();
+        if (datasource != null) {
+            datasource.close();
+        }
+        super.onDestroy();
     }
 
     private void handleRegistration() {
@@ -67,24 +84,45 @@ public class RegisterActivity extends AppCompatActivity {
         registerProgress.setVisibility(View.VISIBLE);
         btnCreateAccount.setEnabled(false);
 
-        SharedPreferences prefs = getSharedPreferences("ASL_User_Prefs", Context.MODE_PRIVATE);
-        prefs.edit()
-                .putString("user_name", name)
-                .putString("saved_email", email)
-                .putString("user_email", email)
-                .putString("saved_password", password)
-                .putString("user_password", password)
-                .putLong("member_since", System.currentTimeMillis())
-                .putBoolean("is_logged_in", true)
-                .apply();
+        final long memberSince = System.currentTimeMillis();
 
-        Snackbar.make(findViewById(android.R.id.content), "Welcome, " + name + "!", Snackbar.LENGTH_SHORT).show();
+        databaseExecutor.execute(() -> {
+            datasource.open();
+            final long insertId = datasource.registerUser(name, email, password, memberSince);
+            datasource.close();
 
-        findViewById(android.R.id.content).postDelayed(() -> {
-            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        }, 700);
+            runOnUiThread(() -> {
+                if (insertId == -1) {
+                    registerProgress.setVisibility(View.GONE);
+                    btnCreateAccount.setEnabled(true);
+                    Snackbar.make(findViewById(android.R.id.content),
+                            "An account with this email already exists",
+                            Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+
+                SharedPreferences prefs = getSharedPreferences("ASL_User_Prefs", Context.MODE_PRIVATE);
+                prefs.edit()
+                        .putString("user_name", name)
+                        .putString("saved_email", email)
+                        .putString("user_email", email)
+                        .putString("saved_password", password)
+                        .putString("user_password", password)
+                        .putLong("member_since", memberSince)
+                        .putBoolean("is_logged_in", true)
+                        .apply();
+
+                Snackbar.make(findViewById(android.R.id.content),
+                        "Welcome, " + name + "!",
+                        Snackbar.LENGTH_SHORT).show();
+
+                findViewById(android.R.id.content).postDelayed(() -> {
+                    Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                }, 700);
+            });
+        });
     }
 }
